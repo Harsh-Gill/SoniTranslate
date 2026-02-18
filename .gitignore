@@ -212,3 +212,6 @@ WHISPER_MODELS/
 whisper_api_audio_parts/
 uroman/
 pdf_images/
+
+*.mp3
+*.mp4

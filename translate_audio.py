@@ -254,8 +254,19 @@ def translate_segments(
     """
     print(f"[3/6] Translating {len(segments)} segments → {target_lang}...")
 
+    # Map language codes that Google Translate doesn't accept as-is
+    GOOGLE_LANG_MAP = {
+        "zh": "zh-CN",
+        "he": "iw",
+        "nb": "no",
+        "fil": "tl",
+    }
+    google_target = GOOGLE_LANG_MAP.get(target_lang, target_lang)
+
     src = source_lang if source_lang else "auto"
-    translator = GoogleTranslator(source=src, target=target_lang)
+    if src in GOOGLE_LANG_MAP:
+        src = GOOGLE_LANG_MAP[src]
+    translator = GoogleTranslator(source=src, target=google_target)
 
     translated = []
     for seg in tqdm(segments, desc="Translating"):
@@ -901,6 +912,7 @@ def translate_audio(
     output_file: str | None = None,
     whisper_model: str = "base",
     voice: str | None = None,
+    voice_map: dict[str, str] | None = None,
     original_volume: float = 0.15,
     min_speakers: int = 1,
     max_speakers: int = 1,
@@ -918,6 +930,7 @@ def translate_audio(
         output_file:      Output file path. Defaults to input_translated.wav.
         whisper_model:    WhisperX model size (tiny, base, small, medium, large-v2).
         voice:            Edge TTS voice name, or None for auto-selection.
+        voice_map:        Pre-built {speaker: voice} mapping (overrides voice/gender detection).
         original_volume:  Volume of original audio in mix (0.0 - 1.0). Set to 0 for TTS-only.
         min_speakers:     Minimum number of speakers for diarization.
         max_speakers:     Maximum number of speakers for diarization.
@@ -1006,20 +1019,24 @@ def translate_audio(
         speaker_genders = detect_speaker_genders(audio_wav, segments)
 
         # 4. Generate TTS (with gender-matched per-speaker voices)
-        if max_speakers > 1 or not voice:
-            voice_map = assign_voices_to_speakers(
+        if voice_map:
+            # Use pre-built voice map (e.g. from --mixed mode)
+            tts_voice_map = voice_map
+            print(f"    Using pre-assigned voice map ({len(tts_voice_map)} speakers)")
+        elif max_speakers > 1 or not voice:
+            tts_voice_map = assign_voices_to_speakers(
                 translated_segments, target_lang,
                 speaker_genders=speaker_genders,
             )
         else:
-            voice_map = None
+            tts_voice_map = None
 
         audio_files = generate_tts(
             translated_segments,
             target_lang=target_lang,
             audio_dir=tts_dir,
             voice=voice,
-            voice_map=voice_map,
+            voice_map=tts_voice_map,
         )
 
         # 5. Assemble on timeline
