@@ -1,0 +1,48 @@
+# Requirements for translate_audio.py (SoniTranslate Prototype)
+# Tested on macOS with Python 3.10+
+#
+# Install with:
+#   pip install -r requirements_prototype.txt
+#
+# Also requires ffmpeg:
+#   brew install ffmpeg
+
+# --- PyTorch (CPU, for macOS) ---
+# For Apple Silicon (M1/M2/M3) MPS acceleration is auto-detected by torch.
+# If you need CUDA (Linux/Windows), replace with the appropriate torch version.
+torch>=2.1.0
+torchaudio>=2.1.0
+
+# --- Speech Recognition ---
+# WhisperX for transcription + alignment + diarization
+git+https://github.com/m-bain/whisperX.git
+
+# --- Translation ---
+deep-translator==1.11.4
+
+# --- Text-to-Speech ---
+edge-tts>=6.1.7
+
+# --- Audio Processing ---
+pydub==0.25.1
+soundfile>=0.12.1
+numpy>=1.24.0
+librosa>=0.10.0
+
+# --- Async compatibility (macOS fix) ---
+nest-asyncio>=1.5.0
+
+# --- Progress bars ---
+tqdm>=4.65.0
+
+# --- Diarization (optional, only needed for --max-speakers > 1) ---
+# Requires a HuggingFace token with pyannote model access.
+# pyannote.audio is pulled in by whisperx, but if you hit issues:
+# pip install pyannote.audio>=3.1
+
+# --- Vocal Separation (optional, needed for --remove-vocals) ---
+# Demucs by Meta — separates vocals from music/background
+demucs>=4.0.0
+torchaudio>=2.1.0
+
+librosa

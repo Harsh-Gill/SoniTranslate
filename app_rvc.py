@@ -415,6 +415,7 @@ class SoniTranslate(SoniTrCache):
         vocal_refinement=False,
         literalize_numbers=True,
         segment_duration_limit=15,
+        skip_start_seconds=0,
         diarization_model="pyannote_2.1",
         translate_process="google_translator_batch",
         subtitle_file=None,
@@ -680,6 +681,7 @@ class SoniTranslate(SoniTrCache):
                 batch_size,
                 literalize_numbers,
                 segment_duration_limit,
+                skip_start_seconds,
                 (
                     "l_unit"
                     if text_segmentation_scale in ["word", "character"]
@@ -714,6 +716,19 @@ class SoniTranslate(SoniTrCache):
                         literalize_numbers,
                         segment_duration_limit,
                     )
+                # Filter out segments in the first N seconds
+                if skip_start_seconds > 0:
+                    original_count = len(self.result['segments'])
+                    self.result['segments'] = [
+                        seg for seg in self.result['segments']
+                        if seg['start'] >= skip_start_seconds
+                    ]
+                    skipped = original_count - len(self.result['segments'])
+                    logger.info(
+                        f"Skipped {skipped} segments in the first "
+                        f"{skip_start_seconds}s of audio"
+                    )
+
                 logger.debug(
                     "Transcript complete, "
                     f"segments count {len(self.result['segments'])}"
@@ -1842,6 +1857,14 @@ def create_gui(theme, logs_in_gui=False):
                                 minimum=1,
                                 maximum=30,
                             )
+                            skip_start_seconds_gui = gr.Slider(
+                                label=lg_conf["skip_start_label"],
+                                info=lg_conf["skip_start_info"],
+                                value=0,
+                                step=1,
+                                minimum=0,
+                                maximum=120,
+                            )
                             whisper_model_default = (
                                 "large-v3"
                                 if SoniTr.device == "cuda"
@@ -2639,6 +2662,7 @@ def create_gui(theme, logs_in_gui=False):
                 vocal_refinement_gui,
                 literalize_numbers_gui,
                 segment_duration_limit_gui,
+                skip_start_seconds_gui,
                 diarization_process_dropdown,
                 translate_process_dropdown,
                 input_srt,
@@ -2706,6 +2730,7 @@ def create_gui(theme, logs_in_gui=False):
                 vocal_refinement_gui,
                 literalize_numbers_gui,
                 segment_duration_limit_gui,
+                skip_start_seconds_gui,
                 diarization_process_dropdown,
                 translate_process_dropdown,
                 input_srt,
